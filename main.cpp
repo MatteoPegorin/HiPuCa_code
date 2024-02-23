@@ -30,7 +30,7 @@ int main(){
 	create_fiducial_waveform();
 
 	cout << "=== Executing MCMC" << endl;
-	int return_value = system("mkdir -p Results");
+	return_value = system("mkdir -p Results");
 
 	execute_MCMC();
 
