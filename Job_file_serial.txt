@@ -1,0 +1,18 @@
+#!/bin/bash
+
+
+#SBATCH --ntasks 1
+#SBATCH --partition allgroups
+#SBATCH --time 00:30:00
+#SBATCH --mem 100M
+
+#SBATCH --job-name Test_serial_MCMC_HiPuCa
+#SBATCH --mail-user giovanna.saleh@phd.unipd.it matteo.pegorin.1@phd.unipd.it
+#SBATCH --mail-type BEGIN, END, FAIL
+#SBATCH --output Slurm_output_serial.txt
+#SBATCH --error Slurm_error_serial.txt
+
+cd $SLURM_SUBMIT_DIR
+
+
+srun singularity exec HiPuCa_MCMC_container.sif ./MCMC_HiPuCa_serial.out

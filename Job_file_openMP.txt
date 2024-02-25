@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+#SBATCH --ntasks 1
+#SBATCH --cpus-per-task 4
+#SBATCH --partition allgroups
+#SBATCH --time 00:30:00
+#SBATCH --mem 100M
+
+#SBATCH --job-name Test_parallel_MCMC_HiPuCa_4cpus
+#SBATCH --mail-user giovanna.saleh@phd.unipd.it matteo.pegorin.1@phd.unipd.it
+#SBATCH --mail-type BEGIN, END, FAIL
+#SBATCH --output OUTPUT_Test_parallel_MCMC_HiPuCa_4cpus.txt
+#SBATCH --error ERROR_Test_parallel_MCMC_HiPuCa_4cpus.txt
+
+cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=4
+
+
+srun singularity exec HiPuCa_MCMC_container.sif ./MCMC_HiPuCa_openMP.out
