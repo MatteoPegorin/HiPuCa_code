@@ -9,6 +9,13 @@
 using namespace std;
 
 
+//Initialize variables that will be also in MCMC_settings.txt
+int CHAIN_LENGTH = 200000;
+int BURN_IN_LENGTH = CHAIN_LENGTH/5;
+vector<double> CHAIN_JUMP_SIZE = {0.05, 0.01, 0.01, 0.00005}; //The CHAIN_JUMP_SIZE should be chosen so that the acceptance rate is around 0.25-0.5
+
+
+
 //Random generator --- MAY NEED TO BE EXECUTES SEPARATELY BY EACH THREAD?
 default_random_engine generator;
 
@@ -106,10 +113,10 @@ void initialize_random_number_generator(){
     cout << "=== IMPLEMENT THIS FUNCTION FOR EACH THREAD SEPARATELY?" << endl;
 }
 
-vector<vector<double>> load_initial_paramater_values_MCMC(){
+vector<vector<double>> load_initial_paramater_values_MCMC(string def_path){
 	//I read the initial points from a text file
-	const string filename = "initial_points.txt";
-	vector<vector<double>> initial_values = parseDoubleListFromFile(filename);
+	const string filename = "Settings/initial_points.txt";
+	vector<vector<double>> initial_values = parseDoubleListFromFile(def_path + filename);
 	
 	cout << "=== Initial parameter values for MCMC chains:\n";
 	for (const auto& line : initial_values) {
@@ -127,6 +134,12 @@ vector<vector<double>> parseDoubleListFromFile(string filename) {
 	vector<vector<double>> result;
 	ifstream file(filename);
 	string line;
+
+	//Throw error if file is not found
+	if (!file) {
+		cout << "ERROR: File " << filename << " not found!" << endl;
+		return {{}};
+	}
 
 	while (getline(file, line)) {
         	vector<double> numbers;
@@ -178,4 +191,10 @@ double log_uniform(double x, double min, double max){
 
 double log_normal(double x, double mean, double sigma){
 	return -0.5 * log(2. * M_PI) - log(sigma) - 0.5 * pow(((x - mean)/sigma), 2.);
+}
+
+void load_initial_settings_MCMC(int number_points_per_chain, int chain_burn_in_length, vector<double> chain_jump_sizes){
+	CHAIN_LENGTH = number_points_per_chain;
+	BURN_IN_LENGTH = chain_burn_in_length;
+	CHAIN_JUMP_SIZE = chain_jump_sizes;
 }

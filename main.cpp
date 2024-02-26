@@ -8,20 +8,25 @@
 #include <random>
 #include <string>
 
+
 using namespace std;
 
 //Default path where to write temporary data and results
 string def_path = "./";
 
+/*
+	Parameters for the MCMC
+*/
+int number_of_chains_to_run = 1;
 
-
-//To_FIX
 int execute_MCMC();
 int main_waveform();
 int create_fiducial_waveform();
 double log_posterior_prob(vector<double> const & parameters, vector<double> const & data);
 double log_prior_prob(vector<double> const & parameters);
 double log_likelihood_prob(vector<double> const & parameters, vector<double> const & data);
+void load_initial_settings();
+
 
 int main(int argc, char* argv[]){
 
@@ -30,8 +35,18 @@ int main(int argc, char* argv[]){
 	
 	cout << "=== Initializing program" << endl;
 	// Check if path argument is provided, if not, use default path (first argument is the name of the program)
-    if (argc == 2){
-		def_path = argv[1];
+    if (argc >= 3){
+		def_path = argv[2];
+    }
+
+	cout << "=== Loading MCMC settings" << endl;
+
+	load_initial_settings();
+
+	//If parameter is given at runtime, can override number_of_chains from settings file
+	if (argc >= 2){
+		number_of_chains_to_run = stoi(argv[1]);
+		cout << "=== Overriding number of chains to run with parameter from command line: " << number_of_chains_to_run << endl;
     }
 
 	cout << "Default path: " << def_path << endl;
@@ -42,6 +57,7 @@ int main(int argc, char* argv[]){
 	int return_value = system(command.c_str());
 
 	create_fiducial_waveform();
+
 
 	cout << "=== Executing MCMC" << endl;
 	command = "mkdir -p " + def_path + "Results";
@@ -61,7 +77,11 @@ int execute_MCMC(){
 	vector<double> data = load_data(def_path+"Data/h_measured_strain_with_noise.txt");
 	
 	cout << "=== Loading initial parameters values for MCMCs" << endl;
-	vector<vector<double>> initial_parameter_values = load_initial_paramater_values_MCMC();
+	vector<vector<double>> initial_parameter_values = load_initial_paramater_values_MCMC(def_path);
+	if(initial_parameter_values.size() < number_of_chains_to_run){
+		cout << "ERROR: Not enough initial parameter values (" << initial_parameter_values.size() << ") for the number of chains to run (" << number_of_chains_to_run << ")!" << endl;
+		return 1;
+	}
 
 	cout << "=== Calling MCMC function" << endl;
 	chain executed_chain = MCMC(log_posterior_prob, initial_parameter_values[0], data, CHAIN_LENGTH, CHAIN_JUMP_SIZE, 0, true);
@@ -80,8 +100,8 @@ int execute_MCMC(){
 	return 0;
 }
 
-
-const double sigma_noise = 1e-21;
+//Not a const anymore as it can be modified in the MCMC_settings.txt file!
+double sigma_noise = 1e-21;
 
 int create_fiducial_waveform(){
 
@@ -169,4 +189,54 @@ double log_posterior_prob(vector<double> const & parameters, vector<double> cons
 	double log_posterior = log_likelihood + log_prior;
 
 	return log_posterior;
+}
+
+void load_initial_settings(){
+	//Check if file exist, and open it
+	ifstream file(def_path + "Settings/MCMC_settings.txt");
+	string line;
+
+	if(file.is_open()){
+		//Number of chains
+		getline(file, line);
+		getline(file, line);
+		number_of_chains_to_run = stoi(line);
+		cout << "Number of chains to run: " << number_of_chains_to_run << endl;
+
+		//Number of points for each MCMC chain
+		getline(file, line);
+		getline(file, line);
+		int number_points_per_chain = stoi(line);
+		cout << "Number of points per chain: " << number_points_per_chain << endl;
+
+		//Number of burnin points to remove
+		getline(file, line);
+		getline(file, line);
+		int burn_in_length = stoi(line);
+		cout << "Burn in length to remove: " << burn_in_length << endl;
+
+		//Chain jump size
+		getline(file, line);
+		vector<double> jump_sizes = {};
+		for(int i = 0; i < 4; i++){
+			getline(file, line);
+			jump_sizes.push_back(stod(line));
+			cout << "Jump size for parameter " << i << ": " << jump_sizes[i] << endl;
+		}
+		
+		//Sigma_noise
+		getline(file, line);
+		getline(file, line);
+		sigma_noise = stod(line);
+		cout << "Sigma noise: " << sigma_noise << endl;
+
+		load_initial_settings_MCMC(number_points_per_chain, burn_in_length, jump_sizes);
+
+		cout << "=== MCMC successfully loaded" << endl;
+
+	}else{
+		cout << "ERROR: File MCMC_settings.txt not found!" << endl;
+	}
+
+	file.close();
 }

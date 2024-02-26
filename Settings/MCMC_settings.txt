@@ -1,0 +1,13 @@
+#Number of MCMC chain to run
+1
+#Number of points for each MCMC chain
+200000
+#Number of burnin points to remove
+40000
+#Chain jump size (for each parameter)
+0.05
+0.01
+0.01
+0.00005
+#sigma_noise to intruduce noise in mock fiducial waveform
+1e-21

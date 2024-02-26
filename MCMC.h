@@ -17,9 +17,13 @@ using namespace std;
 //Dimensionanility of the parameter space
 const string path_to_print_results = "Results/";
 const int NUM_PAR = 4;
-const int CHAIN_LENGTH = 200000;
-const int BURN_IN_LENGTH = CHAIN_LENGTH/5;
-const vector<double> CHAIN_JUMP_SIZE = {0.05, 0.01, 0.01, 0.00005}; //The CHAIN_JUMP_SIZE should be chosen so that the acceptance rate is around 0.25-0.5
+
+//Not constants anymore, since they can be modified using the MCMC_settings.txt file... it may degrade somewhat the performance, but it is more flexible
+//I also have to declare them as extern in the header file, so that they can be used in main.cpp; yet I initialize them do a default value in MCMC.cpp
+extern int CHAIN_LENGTH;
+extern int BURN_IN_LENGTH;
+extern vector<double> CHAIN_JUMP_SIZE; //The CHAIN_JUMP_SIZE should be chosen so that the acceptance rate is around 0.25-0.5
+
 
 //Defining a type for the pointer to the posterior probability function
 typedef double (*FunctionPointer)(const std::vector<double>&, const std::vector<double>&);
@@ -122,11 +126,12 @@ chain MCMC(FunctionPointer, vector<double> const &, vector<double> const &, int,
 double log_posterior_prob(vector<double> const &, vector<double> const &);
 vector<double> load_data(string);
 void initialize_random_number_generator();
-vector<vector<double>> load_initial_paramater_values_MCMC();
+vector<vector<double>> load_initial_paramater_values_MCMC(string);
 vector<vector<double>> parseDoubleListFromFile(string);
 vector<double> draw_point_from_multivariate_normal_distribution(vector<double> const &, vector<double> const &);
 vector<double> draw_point_from_multivariate_normal_distribution(vector<double> const &, double);
 double log_uniform(double, double, double);
 double log_gaussian(double, double, double);
+void load_initial_settings_MCMC(int, int, vector<double>);
 
 #endif
