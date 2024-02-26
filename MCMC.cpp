@@ -42,7 +42,7 @@ chain MCMC(FunctionPointer log_posterior_probability, vector<double> const & sta
 	const int DEBUG_TO_SKIP = 100;
 	for(int i = 0; i < chain_length; i++){
 		if(debug && (i + 1) % DEBUG_TO_SKIP == 0){
-			cout << "=== MCMC index " << chain_index << " -- iteration " << i << " of " << chain_length << " (" << (100.*i)/chain_length << "%) -- mean acceptance ratio: " << 100.*mean_acceptance_ratio/DEBUG_TO_SKIP << "%" << endl;
+			cout << "= MCMC index " << chain_index << " -- iteration " << i << " of " << chain_length << " (" << (100.*i)/chain_length << "%) -- mean acceptance ratio: " << 100.*mean_acceptance_ratio/DEBUG_TO_SKIP << "%" << endl;
 			mean_acceptance_ratio = 0.0;
 			for(double last_point : chain_to_return.chain_points.back()){
 				cout << last_point << "\t";

@@ -92,7 +92,7 @@ struct chain{
 	void save_chain_to_file(string def_path){
 		ofstream file;
 		file.open(def_path + path_to_print_results + "Points_chain_" + to_string(chain_index) + ".txt");
-		file.precision(7);
+		file.precision(10);
 		for(int i = 0; i < chain_points.size(); i++){
 			for(int j = 0; j < chain_points[i].size(); j++){
 				file << chain_points[i][j] << "\t";
