@@ -16,7 +16,7 @@ LIB_HEADERS = Waveform.h MCMC.h
 LIB_OBJECTS = $(patsubst %.cpp, $(OBJDIR)/%.o, $(LIB_SOURCES))
 
 # Executable
-EXECUTABLE = exec
+EXECUTABLE = HiPuCa_MCMC
 
 # Default target
 all: $(EXECUTABLE)
