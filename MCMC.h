@@ -85,9 +85,9 @@ struct chain{
 		}
 	}
 
-	void save_chain_to_file(){
+	void save_chain_to_file(string def_path){
 		ofstream file;
-		file.open(path_to_print_results + "Points_chain_" + to_string(chain_index) + ".txt");
+		file.open(def_path + path_to_print_results + "Points_chain_" + to_string(chain_index) + ".txt");
 		file.precision(7);
 		for(int i = 0; i < chain_points.size(); i++){
 			for(int j = 0; j < chain_points[i].size(); j++){
@@ -98,9 +98,9 @@ struct chain{
 		file.close();
 	}
 
-	void print_mean_and_std_dev_to_file() {
+	void print_mean_and_std_dev_to_file(string def_path) {
 		ofstream file;
-		file.open(path_to_print_results + "Results_chain_" + to_string(chain_index) + ".txt");
+		file.open(def_path + path_to_print_results + "Results_chain_" + to_string(chain_index) + ".txt");
 		file << "Chain " << chain_index << " results:" << endl;
 		file << "Number of points used from chain: " << chain_points.size() << endl;
 		file << "Mean and standard deviation of chain " << chain_index << endl;

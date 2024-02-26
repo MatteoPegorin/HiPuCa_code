@@ -10,6 +10,11 @@
 
 using namespace std;
 
+//Default path where to write temporary data and results
+string def_path = "./";
+
+
+
 //To_FIX
 int execute_MCMC();
 int main_waveform();
@@ -18,19 +23,29 @@ double log_posterior_prob(vector<double> const & parameters, vector<double> cons
 double log_prior_prob(vector<double> const & parameters);
 double log_likelihood_prob(vector<double> const & parameters, vector<double> const & data);
 
-int main(){
+int main(int argc, char* argv[]){
 
  	cout << "=== Code for the PhD course: Advanced topics on scientific and parallel programming with practical application on the CAPRI HPC infrastructure" << endl;
 	cout << "=== Giovanna Saleh and Matteo Pegorin" << endl;
 	
+	cout << "=== Initializing program" << endl;
+	// Check if path argument is provided, if not, use default path (first argument is the name of the program)
+    if (argc == 2){
+		def_path = argv[1];
+    }
+
+	cout << "Default path: " << def_path << endl;
+
 	cout << "=== Creating fiducial waveform" << endl;
 
-	int return_value = system("mkdir -p Data");
+	string command = "mkdir -p " + def_path + "Data";
+	int return_value = system(command.c_str());
 
 	create_fiducial_waveform();
 
 	cout << "=== Executing MCMC" << endl;
-	return_value = system("mkdir -p Results");
+	command = "mkdir -p " + def_path + "Results";
+	return_value = system(command.c_str());
 
 	execute_MCMC();
 
@@ -43,7 +58,7 @@ int execute_MCMC(){
 	initialize_random_number_generator();
 
 	cout << "=== Loading experimental (mock) dataset -- fiducial waveform with gaussian noise" << endl;
-	vector<double> data = load_data("Data/h_measured_strain_with_noise.txt");
+	vector<double> data = load_data(def_path+"Data/h_measured_strain_with_noise.txt");
 	
 	cout << "=== Loading initial parameters values for MCMCs" << endl;
 	vector<vector<double>> initial_parameter_values = load_initial_paramater_values_MCMC();
@@ -55,10 +70,10 @@ int execute_MCMC(){
 	executed_chain.process_chain(BURN_IN_LENGTH, true);
 
 	cout << "=== Writing MCMC results to file" << endl;
-	executed_chain.print_mean_and_std_dev_to_file();
+	executed_chain.print_mean_and_std_dev_to_file(def_path);
 
 	cout << "=== Writing MCMC chain to file" << endl;
-	executed_chain.save_chain_to_file();
+	executed_chain.save_chain_to_file(def_path);
 
 	cout << "=== MCMC executed" << endl;
 
@@ -89,7 +104,7 @@ int create_fiducial_waveform(){
 	cout << "=== Waveform evaluated" << endl;
 
 	cout << "=== Writing waveform to file" << endl;
-	write_vector_to_file(h_strain, "Data/h_measured_strain.txt");
+	write_vector_to_file(h_strain, def_path+"Data/h_measured_strain.txt");
 
 	cout << "=== Adding noise to the waveform" << endl;
 
@@ -105,7 +120,7 @@ int create_fiducial_waveform(){
 	}
 	
 	cout << "=== Writing waveform with noise to file" << endl;
-	write_vector_to_file(h_strain_with_noise, "Data/h_measured_strain_with_noise.txt");
+	write_vector_to_file(h_strain_with_noise, def_path+"Data/h_measured_strain_with_noise.txt");
 
   return 0;
 }
