@@ -9,6 +9,7 @@
 #include <string>
 
 
+
 using namespace std;
 
 //Default path where to write temporary data and results
@@ -19,9 +20,8 @@ string def_path = "./";
 */
 int number_of_chains_to_run = 1;
 
-int execute_MCMC();
-int main_waveform();
-int create_fiducial_waveform();
+void execute_MCMC(bool);
+void create_fiducial_waveform();
 double log_posterior_prob(vector<double> const & parameters, vector<double> const & data);
 double log_prior_prob(vector<double> const & parameters);
 double log_likelihood_prob(vector<double> const & parameters, vector<double> const & data);
@@ -63,15 +63,12 @@ int main(int argc, char* argv[]){
 	command = "mkdir -p " + def_path + "Results";
 	return_value = system(command.c_str());
 
-	execute_MCMC();
+	execute_MCMC(true);
 
   return 0;
 }
 
-int execute_MCMC(){	
-
-	cout << "=== Initializing random number generator" << endl;
-	initialize_random_number_generator();
+void execute_MCMC(bool debug = true){	
 
 	cout << "=== Loading experimental (mock) dataset -- fiducial waveform with gaussian noise" << endl;
 	vector<double> data = load_data(def_path+"Data/h_measured_strain_with_noise.txt");
@@ -80,30 +77,59 @@ int execute_MCMC(){
 	vector<vector<double>> initial_parameter_values = load_initial_paramater_values_MCMC(def_path);
 	if(initial_parameter_values.size() < number_of_chains_to_run){
 		cout << "ERROR: Not enough initial parameter values (" << initial_parameter_values.size() << ") for the number of chains to run (" << number_of_chains_to_run << ")!" << endl;
-		return 1;
+		return;
 	}
 
-	cout << "=== Calling MCMC function" << endl;
-	chain executed_chain = MCMC(log_posterior_prob, initial_parameter_values[0], data, CHAIN_LENGTH, CHAIN_JUMP_SIZE, 0, true);
+	vector<chain*> list_MCMC_chains;
 
-	cout << "=== DEBUG: print MCMC result" << endl;
-	executed_chain.process_chain(BURN_IN_LENGTH, true);
+	cout << "=== Initializing " << number_of_chains_to_run << " MCMC chains" << endl;
+	for(int i = 0; i < number_of_chains_to_run; i++){
+		chain* chain_pointer = new chain();
+		chain_pointer->initialize_chain(i, initial_parameter_values[i]);
+		list_MCMC_chains.push_back(chain_pointer);
 
-	cout << "=== Writing MCMC results to file" << endl;
-	executed_chain.print_mean_and_std_dev_to_file(def_path);
+		cout << "=== Chain " << i << " initialized" << endl;
+	}
 
-	cout << "=== Writing MCMC chain to file" << endl;
-	executed_chain.save_chain_to_file(def_path);
+	cout << "=== Executing MCMC" << endl;
+	
+	#pragma omp parallel for
+	for(int i = 0; i < list_MCMC_chains.size(); i++){
+		// (//Let us process each chain and write the results to file indipendently, as soon as each chain has finished, to improve parallelism)
+		// In the following, for each chain we:
+		//     - Run the MCMC
+		//     - Process the chain (remove burn-in and evaluate statistics)
+		//     - Write all the chain points in the output file
+		//     - Write the mean and standard deviation of the parameters in the output file
+		//     - Deallocate the memory for the chain (as soon as it is not needed anymore, to reduce memory footprint)
 
-	cout << "=== MCMC executed" << endl;
 
-	return 0;
+		cout << "== Start running chain " << i + 1 << " out of " << list_MCMC_chains.size() << " (with index " << list_MCMC_chains[i]->chain_index << ")" << endl;
+		MCMC(list_MCMC_chains[i], log_posterior_prob, data, CHAIN_LENGTH, CHAIN_JUMP_SIZE, debug);
+		cout << "== Finished running MCMC chain with index " << list_MCMC_chains[i]->chain_index << endl;
+
+		cout << "== Process MCMC chain index " << list_MCMC_chains[i]->chain_index << " (removing burn-in and evaluating statistics)" << endl;
+		list_MCMC_chains[i]->process_chain(BURN_IN_LENGTH, debug);
+
+		cout << "== Writing MCMC chain to file for chain index " << list_MCMC_chains[i]->chain_index << endl;
+		list_MCMC_chains[i]->save_chain_to_file(def_path);
+
+		cout << "== Writing MCMC results to file for chain index " << list_MCMC_chains[i]->chain_index << endl;
+		list_MCMC_chains[i]->print_mean_and_std_dev_to_file(def_path);
+
+		cout << "== Deallocating memory for chain index " << list_MCMC_chains[i]->chain_index << endl;
+		delete list_MCMC_chains[i];
+
+	}
+
+	cout << "=== MCMC execution finished!" << endl;
+
 }
 
 //Not a const anymore as it can be modified in the MCMC_settings.txt file!
 double sigma_noise = 1e-21;
 
-int create_fiducial_waveform(){
+void create_fiducial_waveform(){
 
 	cout << "=== Creating fiducial post-Newtonian waveform for the inspiral, using the TaylorT3 approximant" << endl;
 
@@ -142,7 +168,6 @@ int create_fiducial_waveform(){
 	cout << "=== Writing waveform with noise to file" << endl;
 	write_vector_to_file(h_strain_with_noise, def_path+"Data/h_measured_strain_with_noise.txt");
 
-  return 0;
 }
 
 // log_posterior_prob(vector<double> parameters, vector<double> data) return the unnormalized value of the log of posterior, given a specic array of values for the parameters (in parameters), and the data for the likelihood in the vector data

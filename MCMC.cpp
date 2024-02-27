@@ -8,49 +8,36 @@
 #include <string>
 using namespace std;
 
-
 //Initialize variables that will be also in MCMC_settings.txt
 int CHAIN_LENGTH = 200000;
 int BURN_IN_LENGTH = CHAIN_LENGTH/5;
 vector<double> CHAIN_JUMP_SIZE = {0.05, 0.01, 0.01, 0.00005}; //The CHAIN_JUMP_SIZE should be chosen so that the acceptance rate is around 0.25-0.5
 
-
-
-//Random generator --- MAY NEED TO BE EXECUTES SEPARATELY BY EACH THREAD?
+//Random number generator
 default_random_engine generator;
 
-
 //We implement the Metropolis-Hastings algorithm to perform the MCMC
-//Pg 63 Note Liguori and https://www.roma1.infn.it/~dagos/rpp/node42.html
+//Pg 63 Liguori's Notes and https://www.roma1.infn.it/~dagos/rpp/node42.html
 
-
-//Takes as input a function P, the log of the Bayesian posterior probability distribution, and samples from it; from the starting point starting_point_parameters in parameter space, and with the given array of data. The return is a vector of vectors, with the points sampled from the MCMC
+//Takes as input a function P, the log of the Bayesian posterior probability distribution, and samples from it; the pointer to the chain to work on, and the given array of data. The function works directly on the chain passed via pointer, with the points sampled from the MCMC
 //You should remove the burn-in of the chain, run several chains, and perform some statistical tests to assess if the chain has converged. The MH_MCMC_jump_size is the standard deviation of the proposal distribution, which is assumed to be a multivariate normal distribution with diagonal covariance matrix
-chain MCMC(FunctionPointer log_posterior_probability, vector<double> const & starting_point_parameters, vector<double> const & data, int chain_length, vector<double> const & MH_MCMC_jump_size, int chain_index, bool debug = false){
-
-	cout << "=== Initializing MCMC" << "\n";
-	
-	chain chain_to_return;
-
-	//starting_point_parameters is the first point in the chain
-	chain_to_return.chain_points.push_back(starting_point_parameters);
-	chain_to_return.chain_index = chain_index;
+void MCMC(chain* single_chain, FunctionPointer log_posterior_probability,  vector<double> const & data, int chain_length, vector<double> const & MH_MCMC_jump_size, bool debug = false){
 	
 	vector<double> new_point;
 	
 	double mean_acceptance_ratio = 0.0;
-	const int DEBUG_TO_SKIP = 100;
-	for(int i = 0; i < chain_length; i++){
+	const int DEBUG_TO_SKIP = 1000;
+	for(int i = 0; i < chain_length - 1; i++){
 		if(debug && (i + 1) % DEBUG_TO_SKIP == 0){
-			cout << "= MCMC index " << chain_index << " -- iteration " << i << " of " << chain_length << " (" << (100.*i)/chain_length << "%) -- mean acceptance ratio: " << 100.*mean_acceptance_ratio/DEBUG_TO_SKIP << "%" << endl;
+			cout << "= MCMC index " << single_chain->chain_index << " -- iteration " << i << " of " << chain_length << " (" << (100.*i)/chain_length << "%) -- mean acceptance ratio: " << 100.*mean_acceptance_ratio/DEBUG_TO_SKIP << "%" << endl;
 			mean_acceptance_ratio = 0.0;
-			for(double last_point : chain_to_return.chain_points.back()){
+			for(double last_point : single_chain->chain_points.back()){
 				cout << last_point << "\t";
 			}
 			cout << endl;
 		}
 
-		new_point = draw_point_from_multivariate_normal_distribution(chain_to_return.chain_points.back(), MH_MCMC_jump_size);
+		new_point = draw_point_from_multivariate_normal_distribution(single_chain->chain_points.back(), MH_MCMC_jump_size);
 		
 		/*
 			With the Metropolis-Hastings algorithm we have to evaluate the ratio of the two probabilities in these points (and we may save them afterwards for additional performance if we reject the proposal)
@@ -69,24 +56,22 @@ chain MCMC(FunctionPointer log_posterior_probability, vector<double> const & sta
 
 		*/
 
-		double acceptance_ratio = exp( log_posterior_probability(new_point, data) - log_posterior_probability(chain_to_return.chain_points.back(), data) ) ;
+		double acceptance_ratio = exp( log_posterior_probability(new_point, data) - log_posterior_probability(single_chain->chain_points.back(), data) ) ;
 		acceptance_ratio = min(acceptance_ratio, 1.0);
 
 		//We have to accept the new point with probability acceptance_ratio, therefore we draw a random number from a uniform distribution
 		double accept_probability = uniform_real_distribution<double>(0.0, 1.0)(generator);
 
 		if(accept_probability <= acceptance_ratio){
-			chain_to_return.chain_points.push_back(new_point);
+			single_chain->chain_points.push_back(new_point);
 			mean_acceptance_ratio += 1.0;
 		}else{
-			chain_to_return.chain_points.push_back(chain_to_return.chain_points.back());
+			single_chain->chain_points.push_back(single_chain->chain_points.back());
 		}
 
 	
 	
 	}
-	
-  	return chain_to_return;
   
 }
 
@@ -106,11 +91,6 @@ vector<double> load_data(string filename){
 	cout << "=== Data loaded\n";
 
 	return data;	
-}
-
-void initialize_random_number_generator(){
-    // Initialize and give seed to random number generator
-    cout << "=== IMPLEMENT THIS FUNCTION FOR EACH THREAD SEPARATELY?" << endl;
 }
 
 vector<vector<double>> load_initial_paramater_values_MCMC(string def_path){

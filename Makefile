@@ -21,6 +21,11 @@ EXECUTABLE = HiPuCa_MCMC
 # Default target
 all: $(EXECUTABLE)
 
+# Rule to compile with OpenMP support
+parallel_openMP: CFLAGS += -fopenmp
+parallel_openMP: LDFLAGS += -fopenmp
+parallel_openMP: $(EXECUTABLE)
+
 # Linking the executable
 $(EXECUTABLE): $(LIB_OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@

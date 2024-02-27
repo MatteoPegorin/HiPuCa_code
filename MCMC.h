@@ -36,6 +36,11 @@ struct chain{
 	vector<double> parameter_mean;
 	vector<double> parameter_std_dev;
 
+	void initialize_chain(int chain_index, vector<double> const & starting_point_parameters){
+		set_chain_index(chain_index);
+		chain_points.push_back(starting_point_parameters);
+	}
+
 	void remove_burn_in(int burn_in_length){
 		if(!removed_burn_in){
 			cout << "Removing " << burn_in_length << " chain points due to burn-in from chain " << chain_index << endl;
@@ -122,10 +127,9 @@ struct chain{
 
 };
 
-chain MCMC(FunctionPointer, vector<double> const &, vector<double> const &, int, vector<double> const &, int, bool);
+void MCMC(chain*, FunctionPointer, vector<double> const &, int, vector<double> const &, bool);
 double log_posterior_prob(vector<double> const &, vector<double> const &);
 vector<double> load_data(string);
-void initialize_random_number_generator();
 vector<vector<double>> load_initial_paramater_values_MCMC(string);
 vector<vector<double>> parseDoubleListFromFile(string);
 vector<double> draw_point_from_multivariate_normal_distribution(vector<double> const &, vector<double> const &);

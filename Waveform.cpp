@@ -9,7 +9,8 @@
 using namespace std;
 
 /*
-    Using master thesis formulae:
+    Post-Newtonian waveform TaylorT3 (in time domain), using the restricted-PN approximation, with corrections to the phase up to 2PN order (can be used only for the inspiral part, far away from the merger)
+    Using Master Thesis formulae:
   	1.91, 1.92, 1.109, 1.110, 6.39
 */
 
@@ -38,7 +39,7 @@ vector<double> h_measured_strain(double obs_theta, double obs_phi, double iota, 
     double h_plus = 0.;
     double h_cross = 0.;
 
-    //Need to implement cutoff at Risco!!! Then I simply return vanishing amplitude and do not compute the phase
+    //Need to implement cutoff at Risco since in this regime the waveform model is not faitfhul anymore!!! Then I simply return vanishing amplitude and do not compute the phase
     if(R_over_Rs > R_ISCO_over_Rs){
       double Theta = Theta_val(t, t_c, nu, m);
       double phase = phase_2PN(Theta, phi_0, nu);
@@ -46,7 +47,7 @@ vector<double> h_measured_strain(double obs_theta, double obs_phi, double iota, 
       
       double amplitude = A_amplitude(r_Mpc, m1, m2, t_c - t);
 
-      //I try to smoothly transition to zero amplitude
+      //I try to smoothly transition to zero amplitude -- not a realistic modeling of the waveform, but useful as a proof-of-concept for the program
       const double multiple_of_R_ISCO = 1.1;
       if(R_over_Rs < multiple_of_R_ISCO* R_ISCO_over_Rs){
         double xvar = ((R_over_Rs - R_ISCO_over_Rs) /((multiple_of_R_ISCO-1.)*R_ISCO_over_Rs));
