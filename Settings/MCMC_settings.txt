@@ -1,9 +1,9 @@
 #Number of MCMC chain to run
-1
+16
 #Number of points for each MCMC chain
-200000
+500000
 #Number of burnin points to remove
-40000
+50000
 #Chain jump size (for each parameter)
 0.05
 0.01
